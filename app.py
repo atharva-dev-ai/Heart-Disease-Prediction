@@ -11,6 +11,46 @@ st.set_page_config(
     page_icon="🫀",
     layout="wide"
 )
+# -------------------- DARK MODE TOGGLE --------------------
+dark_mode = st.sidebar.toggle("🌙 Night Mode", value=True)
+
+if dark_mode:
+    st.markdown("""
+    <style>
+    body {
+        background-color: #0E1117;
+        color: #FAFAFA;
+    }
+    .section {
+        background-color: #161B22;
+        padding: 2rem;
+        border-radius: 14px;
+        box-shadow: 0px 4px 20px rgba(0,0,0,0.6);
+    }
+    h1, h2, h3 {
+        color: #58A6FF;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <style>
+    body {
+        background-color: #F8F9FA;
+        color: #000000;
+    }
+    .section {
+        background-color: #FFFFFF;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
+    }
+    h1, h2, h3 {
+        color: #0F4C81;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 
 # -------------------- GLOBAL STYLES --------------------
 st.markdown("""
