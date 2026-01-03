@@ -1,6 +1,6 @@
 # ============================================================
 # Heart Disease Risk Predictor
-# Premium Medical-Grade ML Web Application
+# End-to-End Machine Learning Web Application
 # ============================================================
 
 # -------------------- IMPORTS --------------------
@@ -10,14 +10,14 @@ import numpy as np
 import time
 import io
 
-# Machine Learning
+# ML
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 
 # Visualization
 import matplotlib.pyplot as plt
 
-# PDF generation
+# PDF
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -29,7 +29,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# PREMIUM DARK UI + HERO ANIMATION (CSS)
+# PREMIUM DARK UI (STABLE)
 # ============================================================
 st.markdown("""
 <style>
@@ -38,47 +38,16 @@ st.markdown("""
     color: #e5e7eb;
     font-family: "Segoe UI", sans-serif;
 }
-
-@keyframes fadeSlide {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.hero-title {
-    font-size: 3rem;
-    font-weight: 800;
-    color: #60a5fa;
-    text-align: center;
-    animation: fadeSlide 1s ease-out;
-}
-
-.hero-subtitle {
-    text-align: center;
-    color: #94a3b8;
-    font-size: 1.1rem;
-    animation: fadeSlide 1.4s ease-out;
-}
+h1 { color: #60a5fa; text-align: center; font-weight: 800; }
+h2, h3 { color: #93c5fd; }
+label { color: #c7d2fe !important; font-weight: 600; }
 
 .glass {
-    background: linear-gradient(
-        135deg,
-        rgba(255,255,255,0.08),
-        rgba(255,255,255,0.02)
-    );
-    backdrop-filter: blur(18px);
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(16px);
     border-radius: 20px;
     padding: 2rem;
     box-shadow: 0 20px 50px rgba(0,0,0,0.65);
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-label {
-    color: #c7d2fe !important;
-    font-weight: 600;
-}
-
-div[data-baseweb="slider"] > div > div {
-    background: linear-gradient(90deg, #ef4444, #f97316);
 }
 
 button[kind="primary"] {
@@ -87,24 +56,18 @@ button[kind="primary"] {
     border-radius: 16px !important;
     font-weight: 700 !important;
     padding: 0.8rem 1.6rem !important;
-    box-shadow: 0 12px 35px rgba(56,189,248,0.6);
-}
-button[kind="primary"]:hover {
-    transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 20px 55px rgba(56,189,248,0.9);
 }
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# HERO SECTION
+# HEADER
 # ============================================================
-st.markdown("""
-<div class="hero-title">🫀 Heart Disease Risk Predictor</div>
-<div class="hero-subtitle">
-AI-powered clinical decision support system
-</div>
-""", unsafe_allow_html=True)
+st.markdown("<h1>🫀 Heart Disease Risk Predictor</h1>", unsafe_allow_html=True)
+st.markdown(
+    "<p style='text-align:center;color:#94a3b8;'>ML-based clinical decision support system</p>",
+    unsafe_allow_html=True
+)
 
 # ============================================================
 # LOAD DATA & TRAIN MODEL
@@ -135,76 +98,103 @@ with tabs[0]:
     with st.form("patient_form"):
         c1, c2, c3 = st.columns(3)
 
-        # ---------- Column 1 ----------
+        # ---------- COLUMN 1 ----------
         with c1:
-            age = st.slider("Age", 18, 90, 45)
+            age = st.slider("Age (age)", 18, 90, 45)
 
-            sex_label = st.selectbox("Sex (0 = Female, 1 = Male)", ["Female", "Male"])
+            sex_label = st.selectbox(
+                "Sex (sex) → 0 = Female, 1 = Male",
+                ["Female", "Male"]
+            )
             sex = 0 if sex_label == "Female" else 1
 
             cp_label = st.selectbox(
                 "Chest Pain Type (cp)",
-                ["Typical Angina", "Atypical Angina", "Non-anginal Pain", "Asymptomatic"]
+                [
+                    "0 = Typical Angina",
+                    "1 = Atypical Angina",
+                    "2 = Non-anginal Pain",
+                    "3 = Asymptomatic"
+                ]
             )
-            cp = {
-                "Typical Angina": 0,
-                "Atypical Angina": 1,
-                "Non-anginal Pain": 2,
-                "Asymptomatic": 3
-            }[cp_label]
+            cp = int(cp_label[0])
 
-        # ---------- Column 2 ----------
+        # ---------- COLUMN 2 ----------
         with c2:
-            trestbps = st.slider("Resting Blood Pressure (trestbps)", 80, 200, 120)
-            chol = st.slider("Serum Cholesterol (chol)", 100, 400, 200)
+            trestbps = st.slider(
+                "Resting Blood Pressure (trestbps)",
+                80, 200, 120
+            )
 
-            fbs_label = st.selectbox("Fasting Blood Sugar >120 (fbs)", ["No", "Yes"])
+            chol = st.slider(
+                "Serum Cholesterol (chol)",
+                100, 400, 200
+            )
+
+            fbs_label = st.selectbox(
+                "Fasting Blood Sugar > 120 mg/dL (fbs) → 1 = Yes, 0 = No",
+                ["No", "Yes"]
+            )
             fbs = 0 if fbs_label == "No" else 1
 
             restecg_label = st.selectbox(
-                "Resting ECG (restecg)",
-                ["Normal", "ST-T Abnormality", "Left Ventricular Hypertrophy"]
+                "Resting ECG Result (restecg)",
+                [
+                    "0 = Normal",
+                    "1 = ST-T Wave Abnormality",
+                    "2 = Left Ventricular Hypertrophy"
+                ]
             )
-            restecg = {
-                "Normal": 0,
-                "ST-T Abnormality": 1,
-                "Left Ventricular Hypertrophy": 2
-            }[restecg_label]
+            restecg = int(restecg_label[0])
 
-        # ---------- Column 3 ----------
+        # ---------- COLUMN 3 ----------
         with c3:
-            thalach = st.slider("Maximum Heart Rate (thalach)", 70, 210, 150)
+            thalach = st.slider(
+                "Maximum Heart Rate Achieved (thalach)",
+                70, 210, 150
+            )
 
-            exang_label = st.selectbox("Exercise Induced Angina (exang)", ["No", "Yes"])
+            exang_label = st.selectbox(
+                "Exercise Induced Angina (exang) → 1 = Yes, 0 = No",
+                ["No", "Yes"]
+            )
             exang = 0 if exang_label == "No" else 1
 
-            oldpeak = st.slider("ST Depression (oldpeak)", 0.0, 6.0, 1.0)
+            oldpeak = st.slider(
+                "ST Depression (oldpeak)",
+                0.0, 6.0, 1.0
+            )
 
             slope_label = st.selectbox(
-                "Slope of ST Segment (slope)",
-                ["Upsloping", "Flat", "Downsloping"]
+                "Slope of Peak Exercise ST Segment (slope)",
+                [
+                    "0 = Upsloping",
+                    "1 = Flat",
+                    "2 = Downsloping"
+                ]
             )
-            slope = {
-                "Upsloping": 0,
-                "Flat": 1,
-                "Downsloping": 2
-            }[slope_label]
+            slope = int(slope_label[0])
 
-        ca = st.selectbox("Number of Major Vessels (ca)", [0, 1, 2, 3, 4])
+        ca = st.selectbox(
+            "Number of Major Vessels Colored by Fluoroscopy (ca)",
+            [0, 1, 2, 3, 4]
+        )
 
-        # 🔴 FIXED: Thalassemia has 4 categories
         thal_label = st.selectbox(
             "Thalassemia (thal)",
-            ["Normal", "Fixed Defect", "Reversible Defect", "Unknown"]
+            [
+                "0 = Normal",
+                "1 = Fixed Defect",
+                "2 = Reversible Defect",
+                "3 = Unknown"
+            ]
         )
-        thal = {
-            "Normal": 0,
-            "Fixed Defect": 1,
-            "Reversible Defect": 2,
-            "Unknown": 3
-        }[thal_label]
+        thal = int(thal_label[0])
 
-        submitted = st.form_submit_button("🩺 Assess Heart Disease Risk", type="primary")
+        submitted = st.form_submit_button(
+            "🩺 Assess Heart Disease Risk",
+            type="primary"
+        )
 
     # ---------- PREDICTION ----------
     if submitted:
@@ -220,29 +210,35 @@ with tabs[0]:
         input_scaled = scaler.transform(input_data)
         risk_prob = model.predict_proba(input_scaled)[0][1] * 100
 
+        # Save to session for PDF tab
+        st.session_state["risk_prob"] = risk_prob
+
         st.subheader("📈 Risk Probability")
         st.progress(int(risk_prob))
         st.metric("Predicted Risk (%)", f"{risk_prob:.2f}%")
 
         if risk_prob >= 50:
-            st.error("⚠️ High Risk Detected")
+            st.error("⚠️ High Risk of Heart Disease Detected")
         else:
-            st.success("✅ Low Risk Detected")
+            st.success("✅ Low Risk of Heart Disease Detected")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
-# TAB 2: FEATURE IMPORTANCE
+# TAB 2: MODEL INSIGHTS
 # ============================================================
 with tabs[1]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.subheader("📊 Feature Importance")
 
-    importance = pd.Series(model.coef_[0], index=X.columns).sort_values()
+    importance = pd.Series(
+        model.coef_[0],
+        index=X.columns
+    ).sort_values()
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    importance.plot(kind="barh", ax=ax, color="#60a5fa")
-    ax.set_title("Feature Influence on Heart Disease Prediction")
+    importance.plot(kind="barh", ax=ax)
+    ax.set_title("Feature Influence on Prediction")
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -254,14 +250,14 @@ with tabs[2]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.subheader("📄 Download Medical Report")
 
-    if submitted:
+    if "risk_prob" in st.session_state:
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
         c.setFont("Helvetica", 12)
 
         c.drawString(50, 800, "Heart Disease Risk Assessment Report")
-        c.drawString(50, 770, f"Predicted Risk: {risk_prob:.2f}%")
-        c.drawString(50, 740, "Generated using Machine Learning.")
+        c.drawString(50, 770, f"Predicted Risk: {st.session_state['risk_prob']:.2f}%")
+        c.drawString(50, 740, "Generated using Machine Learning")
 
         c.save()
         buffer.seek(0)
@@ -272,41 +268,27 @@ with tabs[2]:
             file_name="heart_disease_report.pdf",
             mime="application/pdf"
         )
+    else:
+        st.info("Please assess heart disease risk first.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
 # TAB 4: ABOUT
 # ============================================================
-
-
 with tabs[3]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
-
-    st.subheader("ℹ️ About This Project")
-
     st.write("""
     **Project Highlights**
     - End-to-end Machine Learning healthcare system  
-    - Probability-based heart disease risk prediction  
-    - Explainable AI with feature importance visualization  
-    - Automated PDF medical report generation  
-    - Premium medical-grade UI/UX using Streamlit  
+    - Explicit feature–column traceability  
+    - Probability-based prediction  
+    - Explainable AI & PDF reporting  
 
-    ⚠️ *This application is for educational purposes only and should not be used as a medical diagnosis.*
+    **Developer**
+    - Name: Atharva  
+    - GitHub: https://github.com/atharva-dev-ai  
+
+    ⚠️ For educational purposes only. Not a medical diagnosis.
     """)
-
-    st.markdown("---")
-
-    st.subheader("👨‍💻 Developer Information")
-
-    st.write("""
-    **Name:** Atharva Savant
-    **Email:** atharvasavant2506@gmail.com
-    **GitHub:** https://github.com/atharva-dev-ai  
-
-    Passionate about Machine Learning, Data Science, and building
-    real-world, production-ready AI applications.
-    """)
-
     st.markdown("</div>", unsafe_allow_html=True)
