@@ -11,15 +11,20 @@ st.set_page_config(
     page_icon="🫀",
     layout="wide"
 )
+
 # -------------------- DARK MODE TOGGLE --------------------
 dark_mode = st.sidebar.toggle("🌙 Night Mode", value=True)
 
+# -------------------- THEME STYLES --------------------
 if dark_mode:
     st.markdown("""
     <style>
-    body {
+    .stApp {
         background-color: #0E1117;
         color: #FAFAFA;
+    }
+    h1, h2, h3, label {
+        color: #58A6FF !important;
     }
     .section {
         background-color: #161B22;
@@ -27,17 +32,22 @@ if dark_mode:
         border-radius: 14px;
         box-shadow: 0px 4px 20px rgba(0,0,0,0.6);
     }
-    h1, h2, h3 {
-        color: #58A6FF;
+    div[data-testid="stForm"] {
+        background-color: #161B22;
+        padding: 1.5rem;
+        border-radius: 12px;
     }
     </style>
     """, unsafe_allow_html=True)
 else:
     st.markdown("""
     <style>
-    body {
+    .stApp {
         background-color: #F8F9FA;
         color: #000000;
+    }
+    h1, h2, h3, label {
+        color: #0F4C81 !important;
     }
     .section {
         background-color: #FFFFFF;
@@ -45,46 +55,21 @@ else:
         border-radius: 12px;
         box-shadow: 0px 4px 12px rgba(0,0,0,0.08);
     }
-    h1, h2, h3 {
-        color: #0F4C81;
-    }
     </style>
     """, unsafe_allow_html=True)
-
-
-# -------------------- GLOBAL STYLES --------------------
-st.markdown("""
-<style>
-body {
-    background-color: #F8F9FA;
-}
-h1, h2, h3 {
-    color: #0F4C81;
-    font-family: 'Segoe UI', sans-serif;
-}
-.section {
-    background-color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.05);
-}
-</style>
-""", unsafe_allow_html=True)
 
 # -------------------- HEADER --------------------
 st.markdown(
     """
-    <h1 style='text-align:center;'>🫀 Heart Disease Risk Predictor</h1>
-    <p style='text-align:center; font-size:18px;'>
-    Medical-style machine learning application for heart disease risk assessment
+    <h1 style="text-align:center;">🫀 Heart Disease Risk Predictor</h1>
+    <p style="text-align:center; font-size:18px;">
+    Medical-grade Machine Learning Web Application
     </p>
     """,
     unsafe_allow_html=True
 )
 
-st.write("")
-
-# -------------------- LOAD DATA --------------------
+# -------------------- LOAD DATA & TRAIN MODEL --------------------
 data = pd.read_csv("heart_disease_data.csv")
 
 X = data.drop("target", axis=1)
@@ -99,28 +84,68 @@ model.fit(X_scaled, y)
 # -------------------- NAVIGATION --------------------
 tabs = st.tabs(["🩺 Risk Assessment", "📊 Model Insights", "ℹ️ About"])
 
-# ==================== TAB 1 ====================
+# ==================== TAB 1: RISK ASSESSMENT ====================
 with tabs[0]:
     st.markdown("<div class='section'>", unsafe_allow_html=True)
-    st.subheader("👤 Patient Medical Information")
+    st.subheader("👤 Patient Clinical Information")
 
     with st.form("patient_form"):
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            age = st.slider("Age", 18, 90, 45)
-            sex = st.selectbox("Sex", ["Male", "Female"])
-            cp = st.slider("Chest Pain Type", 0, 3, 1)
+            age = st.slider("Age (age)", 18, 90, 45)
+            sex = st.selectbox("Sex (sex)", ["Female", "Male"])
+            cp = st.selectbox(
+                "Chest Pain Type (cp)",
+                {
+                    "Typical Angina": 0,
+                    "Atypical Angina": 1,
+                    "Non-anginal Pain": 2,
+                    "Asymptomatic": 3
+                }
+            )
 
         with col2:
-            trestbps = st.slider("Resting Blood Pressure (mm Hg)", 80, 200, 120)
-            chol = st.slider("Cholesterol (mg/dL)", 100, 400, 200)
-            fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dL", [0, 1])
+            trestbps = st.slider("Resting Blood Pressure (trestbps)", 80, 200, 120)
+            chol = st.slider("Serum Cholesterol (chol)", 100, 400, 200)
+            fbs = st.selectbox(
+                "Fasting Blood Sugar > 120 mg/dL (fbs)",
+                {"No": 0, "Yes": 1}
+            )
+            restecg = st.selectbox(
+                "Resting ECG Results (restecg)",
+                {
+                    "Normal": 0,
+                    "ST-T Wave Abnormality": 1,
+                    "Left Ventricular Hypertrophy": 2
+                }
+            )
 
         with col3:
-            thalach = st.slider("Maximum Heart Rate Achieved", 70, 210, 150)
-            exang = st.selectbox("Exercise Induced Angina", [0, 1])
-            oldpeak = st.slider("ST Depression", 0.0, 6.0, 1.0)
+            thalach = st.slider("Maximum Heart Rate Achieved (thalach)", 70, 210, 150)
+            exang = st.selectbox(
+                "Exercise Induced Angina (exang)",
+                {"No": 0, "Yes": 1}
+            )
+            oldpeak = st.slider("ST Depression (oldpeak)", 0.0, 6.0, 1.0)
+            slope = st.selectbox(
+                "Slope of Peak Exercise ST Segment (slope)",
+                {
+                    "Upsloping": 0,
+                    "Flat": 1,
+                    "Downsloping": 2
+                }
+            )
+
+        ca = st.selectbox("Number of Major Vessels (ca)", [0, 1, 2, 3, 4])
+        thal = st.selectbox(
+            "Thalassemia (thal)",
+            {
+                "Normal": 0,
+                "Fixed Defect": 1,
+                "Reversible Defect": 2
+            }
+        )
 
         submitted = st.form_submit_button("🩺 Assess Heart Disease Risk")
 
@@ -129,8 +154,19 @@ with tabs[0]:
             time.sleep(1)
 
         input_data = np.array([
-            age, 1 if sex == "Male" else 0, cp, trestbps, chol,
-            fbs, 0, thalach, exang, oldpeak, 0, 0, 0
+            age,
+            1 if sex == "Male" else 0,
+            cp,
+            trestbps,
+            chol,
+            fbs,
+            restecg,
+            thalach,
+            exang,
+            oldpeak,
+            slope,
+            ca,
+            thal
         ]).reshape(1, -1)
 
         input_scaled = scaler.transform(input_data)
@@ -148,34 +184,35 @@ with tabs[0]:
     st.info("⚠️ This tool is for educational purposes only and not a medical diagnosis.")
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== TAB 2 ====================
+# ==================== TAB 2: MODEL INSIGHTS ====================
 with tabs[1]:
     st.markdown("<div class='section'>", unsafe_allow_html=True)
-    st.subheader("📊 Model Performance & Transparency")
+    st.subheader("📊 Model Transparency")
 
     st.metric("Model Used", "Logistic Regression")
-    st.metric("Accuracy", "85%")
+    st.metric("Input Features", "13 Clinical Parameters")
+    st.metric("Accuracy", "≈ 85%")
 
     st.progress(0.85)
 
     st.write(
-        "The model was trained on clinical parameters such as age, blood pressure, "
-        "cholesterol, and heart rate. Feature scaling was applied using StandardScaler."
+        "The model was trained using standardized clinical features and evaluated "
+        "using classification metrics to ensure reliability."
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
-# ==================== TAB 3 ====================
+# ==================== TAB 3: ABOUT ====================
 with tabs[2]:
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.subheader("ℹ️ About This Application")
 
     st.write("""
-    - Built using Python and Streamlit  
-    - Machine Learning model trained on clinical heart disease data  
-    - Designed with accessibility, usability, and ethical AI principles  
+    - End-to-end Machine Learning project  
+    - Deployed using Streamlit Cloud  
+    - Designed with usability, accessibility, and ethical AI principles  
     """)
 
-    st.write("👨‍💻 Developer: **Your Name**")
-    st.write("🔗 GitHub: Add your GitHub profile link")
+    st.write("👨‍💻 Developer: **Atharva Savant**")
+    st.write("🔗 GitHub: https://github.com/atharva-dev-ai")
 
     st.markdown("</div>", unsafe_allow_html=True)
