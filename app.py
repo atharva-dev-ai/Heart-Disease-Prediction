@@ -340,7 +340,10 @@ with tabs[3]:
     - Explainable AI & PDF medical reporting  
 
     **Developer**
-    - Name: Atharva  
+    - Name: Atharva Savant
+    
+    - Email: atharvasavant2506@gmail.com
+    
     - GitHub: https://github.com/atharva-dev-ai  
 
     ⚠️ For educational purposes only. Not a medical diagnosis.
