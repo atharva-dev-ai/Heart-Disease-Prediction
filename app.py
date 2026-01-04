@@ -1,5 +1,6 @@
 # ============================================================
-# Heart Disease Risk Predictor – Medical-grade ML Application
+# Heart Disease Risk Predictor
+# Medical-grade ML Web Application
 # ============================================================
 
 # -------------------- IMPORTS --------------------
@@ -65,25 +66,86 @@ def doctor_recommendation(risk):
     if risk <= 10:
         return "Maintain a healthy lifestyle. Routine annual checkups recommended."
     elif risk <= 25:
-        return "Preventive monitoring and healthy diet advised."
+        return "Preventive monitoring and a balanced diet are advised."
     elif risk <= 50:
-        return "Lifestyle modifications and periodic cardiology review advised."
+        return "Lifestyle modification and periodic cardiology review recommended."
     elif risk <= 75:
-        return "Medical consultation with a cardiologist is strongly recommended."
+        return "Medical consultation with a cardiologist is strongly advised."
     else:
-        return "Immediate cardiology consultation required. High clinical risk detected."
+        return "Immediate cardiologist consultation required. High clinical risk."
+
+
+def generate_pdf(report):
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width / 2, height - 50,
+                         "Heart Disease Risk Assessment Report")
+
+    c.setFont("Helvetica", 10)
+    c.drawCentredString(
+        width / 2, height - 70,
+        f"Generated on: {report['timestamp'].strftime('%d %B %Y, %H:%M')}"
+    )
+
+    y = height - 120
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, "Patient Clinical Parameters")
+    y -= 20
+
+    c.setFont("Helvetica", 10)
+    for k, v in report["patient_data"].items():
+        c.rect(45, y - 5, 500, 20)
+        c.drawString(60, y, str(k))
+        c.drawString(350, y, str(v))
+        y -= 20
+        if y < 120:
+            c.showPage()
+            y = height - 120
+            c.setFont("Helvetica", 10)
+
+    risk_text, color = interpret_risk(report["risk"])
+
+    y -= 10
+    c.setFillColor(color)
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(50, y, f"Risk Level: {risk_text}")
+    c.setFillColor(black)
+
+    y -= 20
+    c.setFont("Helvetica", 11)
+    c.drawString(50, y, f"Predicted Risk: {report['risk']}%")
+    y -= 15
+    c.drawString(50, y, f"Doctor Recommendation: {doctor_recommendation(report['risk'])}")
+
+    c.setFont("Helvetica", 9)
+    c.drawCentredString(
+        width / 2, 40,
+        "Developed by Atharva Savant | atharvasavant2506@gmail.com"
+    )
+
+    c.save()
+    buffer.seek(0)
+    return buffer
 
 # ============================================================
 # HEADER
 # ============================================================
-st.markdown("<h1 style='text-align:center;color:#60a5fa;'>🫀 Heart Disease Risk Predictor</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center;'>ML-based clinical decision support system</p>", unsafe_allow_html=True)
+st.markdown(
+    "<h1 style='text-align:center;color:#60a5fa;'>🫀 Heart Disease Risk Predictor</h1>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<p style='text-align:center;'>ML-based clinical decision support system</p>",
+    unsafe_allow_html=True
+)
 
 # ============================================================
 # LOAD DATA & MODEL
 # ============================================================
 data = pd.read_csv("heart_disease_data.csv")
-
 X = data.drop("target", axis=1)
 y = data["target"]
 
@@ -96,7 +158,7 @@ model.fit(X_scaled, y)
 # ============================================================
 # NAVIGATION
 # ============================================================
-tabs = st.tabs(["🩺 Risk Assessment", "📊 Model Insights", "📄 Report", "ℹ️ About"])
+tabs = st.tabs(["🩺 Risk Assessment", "📄 Reports", "📊 Model Insights", "ℹ️ About"])
 
 # ============================================================
 # TAB 1: RISK ASSESSMENT
@@ -108,7 +170,7 @@ with tabs[0]:
         patient_name = st.text_input("Patient Name")
 
         age = st.slider("Age (age)", 18, 90, 45)
-        sex_label = st.selectbox("Sex (sex) → 0 = Female, 1 = Male", ["Female", "Male"])
+        sex_label = st.selectbox("Sex (sex)", ["Female", "Male"])
         sex = 0 if sex_label == "Female" else 1
 
         cp_label = st.selectbox(
@@ -160,32 +222,31 @@ with tabs[0]:
         ]).reshape(1, -1)
 
         risk_prob = model.predict_proba(scaler.transform(input_data))[0][1] * 100
-
         risk_text, _ = interpret_risk(risk_prob)
 
         st.session_state.setdefault("report_history", [])
         st.session_state["report_history"].append({
-            "time": datetime.now(),
-            "risk": risk_prob
+            "patient_name": patient_name or "Not Provided",
+            "timestamp": datetime.now(),
+            "risk": round(risk_prob, 2),
+            "risk_text": risk_text,
+            "patient_data": {
+                "Patient Name": patient_name or "Not Provided",
+                "Age (age)": age,
+                "Sex (sex)": sex_label,
+                "Chest Pain (cp)": cp_label,
+                "Resting BP (trestbps)": trestbps,
+                "Cholesterol (chol)": chol,
+                "Fasting Blood Sugar (fbs)": fbs_label,
+                "Resting ECG (restecg)": restecg_label,
+                "Max Heart Rate (thalach)": thalach,
+                "Exercise Angina (exang)": exang_label,
+                "ST Depression (oldpeak)": oldpeak,
+                "Slope (slope)": slope_label,
+                "Major Vessels (ca)": ca,
+                "Thalassemia (thal)": thal_label
+            }
         })
-
-        st.session_state["risk_prob"] = risk_prob
-        st.session_state["patient_data"] = {
-            "Patient Name": patient_name or "Not Provided",
-            "Age (age)": age,
-            "Sex (sex)": sex_label,
-            "Chest Pain (cp)": cp_label,
-            "Resting BP (trestbps)": trestbps,
-            "Cholesterol (chol)": chol,
-            "Fasting Blood Sugar (fbs)": fbs_label,
-            "Resting ECG (restecg)": restecg_label,
-            "Max Heart Rate (thalach)": thalach,
-            "Exercise Angina (exang)": exang_label,
-            "ST Depression (oldpeak)": oldpeak,
-            "Slope (slope)": slope_label,
-            "Major Vessels (ca)": ca,
-            "Thalassemia (thal)": thal_label
-        }
 
         st.metric("Predicted Risk (%)", f"{risk_prob:.2f}%")
         st.info(f"Clinical Interpretation: **{risk_text}**")
@@ -194,71 +255,50 @@ with tabs[0]:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
-# TAB 3: PDF REPORT
+# TAB 2: REPORTS (LAST 10 + INDIVIDUAL DOWNLOAD)
 # ============================================================
-with tabs[2]:
+with tabs[1]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
+    st.subheader("🗂️ Recent Reports (Last 10)")
 
-    if "risk_prob" in st.session_state:
+    if "report_history" in st.session_state and len(st.session_state["report_history"]) > 0:
+        recent_reports = st.session_state["report_history"][-10:][::-1]
 
-        buffer = io.BytesIO()
-        c = canvas.Canvas(buffer, pagesize=A4)
-        width, height = A4
-
-        c.setFont("Helvetica-Bold", 16)
-        c.drawCentredString(width / 2, height - 50, "Heart Disease Risk Assessment Report")
-
-        y = height - 120
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y, "Patient Clinical Parameters")
-        y -= 20
-
-        risk_text, color = interpret_risk(st.session_state["risk_prob"])
-
-        for k, v in st.session_state["patient_data"].items():
-            c.setFillColor(black)
-            c.rect(45, y - 5, 500, 20)
-            c.drawString(60, y, f"{k}")
-            c.drawString(350, y, f"{v}")
-            y -= 20
-
-        c.setFillColor(color)
-        c.setFont("Helvetica-Bold", 12)
-        c.drawString(50, y - 10, f"Risk Level: {risk_text}")
-        c.setFillColor(black)
-
-        y -= 40
-        c.drawString(50, y, f"Predicted Risk: {st.session_state['risk_prob']:.2f}%")
-        y -= 20
-        c.drawString(50, y, "Doctor Recommendation:")
-        y -= 15
-        c.drawString(60, y, doctor_recommendation(st.session_state["risk_prob"]))
-
-        c.setFont("Helvetica", 9)
-        c.drawCentredString(
-            width / 2, 40,
-            "Developed by Atharva Savant | atharvasavant2506@gmail.com"
-        )
-
-        c.save()
-        buffer.seek(0)
-
-        st.download_button(
-            "⬇️ Download Medical PDF Report",
-            buffer,
-            "heart_disease_report.pdf",
-            "application/pdf"
-        )
-
-        st.info(f"Reports generated this session: {len(st.session_state['report_history'])}")
-
+        for idx, report in enumerate(recent_reports):
+            with st.expander(
+                f"🧑 {report['patient_name']} | "
+                f"{report['timestamp'].strftime('%d-%m-%Y %H:%M')} | "
+                f"{report['risk']}% | {report['risk_text']}"
+            ):
+                pdf_buffer = generate_pdf(report)
+                st.download_button(
+                    "⬇️ Download This Report (PDF)",
+                    pdf_buffer,
+                    file_name=f"{report['patient_name'].replace(' ', '_')}_heart_report.pdf",
+                    mime="application/pdf",
+                    key=f"dl_{idx}"
+                )
     else:
-        st.warning("Please assess heart disease risk first.")
+        st.info("No reports generated in this session yet.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ============================================================
-# ABOUT
+# TAB 3: MODEL INSIGHTS
+# ============================================================
+with tabs[2]:
+    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+    st.subheader("📊 Feature Importance")
+
+    importance = pd.Series(model.coef_[0], index=X.columns).sort_values()
+    fig, ax = plt.subplots(figsize=(8, 5))
+    importance.plot(kind="barh", ax=ax)
+    st.pyplot(fig)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ============================================================
+# TAB 4: ABOUT
 # ============================================================
 with tabs[3]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
