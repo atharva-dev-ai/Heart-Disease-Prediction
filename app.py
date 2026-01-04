@@ -9,15 +9,16 @@ import pandas as pd
 import numpy as np
 import time
 import io
+from datetime import datetime
 
-# ML
+# Machine Learning
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
 
 # Visualization
 import matplotlib.pyplot as plt
 
-# PDF
+# PDF generation
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -29,7 +30,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# PREMIUM DARK UI (STABLE)
+# PREMIUM DARK UI (STABLE & CLEAN)
 # ============================================================
 st.markdown("""
 <style>
@@ -38,10 +39,18 @@ st.markdown("""
     color: #e5e7eb;
     font-family: "Segoe UI", sans-serif;
 }
-h1 { color: #60a5fa; text-align: center; font-weight: 800; }
-h2, h3 { color: #93c5fd; }
-label { color: #c7d2fe !important; font-weight: 600; }
-
+h1 {
+    color: #60a5fa;
+    text-align: center;
+    font-weight: 800;
+}
+h2, h3 {
+    color: #93c5fd;
+}
+label {
+    color: #c7d2fe !important;
+    font-weight: 600;
+}
 .glass {
     background: rgba(255,255,255,0.06);
     backdrop-filter: blur(16px);
@@ -49,7 +58,6 @@ label { color: #c7d2fe !important; font-weight: 600; }
     padding: 2rem;
     box-shadow: 0 20px 50px rgba(0,0,0,0.65);
 }
-
 button[kind="primary"] {
     background: linear-gradient(135deg, #2563eb, #38bdf8) !important;
     color: white !important;
@@ -100,6 +108,7 @@ with tabs[0]:
 
         # ---------- COLUMN 1 ----------
         with c1:
+            patient_name = st.text_input("Patient Name")
             age = st.slider("Age (age)", 18, 90, 45)
 
             sex_label = st.selectbox(
@@ -121,15 +130,8 @@ with tabs[0]:
 
         # ---------- COLUMN 2 ----------
         with c2:
-            trestbps = st.slider(
-                "Resting Blood Pressure (trestbps)",
-                80, 200, 120
-            )
-
-            chol = st.slider(
-                "Serum Cholesterol (chol)",
-                100, 400, 200
-            )
+            trestbps = st.slider("Resting Blood Pressure (trestbps)", 80, 200, 120)
+            chol = st.slider("Serum Cholesterol (chol)", 100, 400, 200)
 
             fbs_label = st.selectbox(
                 "Fasting Blood Sugar > 120 mg/dL (fbs) → 1 = Yes, 0 = No",
@@ -210,8 +212,24 @@ with tabs[0]:
         input_scaled = scaler.transform(input_data)
         risk_prob = model.predict_proba(input_scaled)[0][1] * 100
 
-        # Save to session for PDF tab
+        # Save everything to session state for PDF
         st.session_state["risk_prob"] = risk_prob
+        st.session_state["patient_data"] = {
+            "Patient Name": patient_name,
+            "Age": age,
+            "Sex": sex_label,
+            "Chest Pain (cp)": cp,
+            "Resting BP (trestbps)": trestbps,
+            "Cholesterol (chol)": chol,
+            "Fasting Blood Sugar (fbs)": fbs,
+            "Resting ECG (restecg)": restecg,
+            "Max Heart Rate (thalach)": thalach,
+            "Exercise Angina (exang)": exang,
+            "ST Depression (oldpeak)": oldpeak,
+            "Slope (slope)": slope,
+            "Major Vessels (ca)": ca,
+            "Thalassemia (thal)": thal
+        }
 
         st.subheader("📈 Risk Probability")
         st.progress(int(risk_prob))
@@ -231,14 +249,11 @@ with tabs[1]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.subheader("📊 Feature Importance")
 
-    importance = pd.Series(
-        model.coef_[0],
-        index=X.columns
-    ).sort_values()
+    importance = pd.Series(model.coef_[0], index=X.columns).sort_values()
 
     fig, ax = plt.subplots(figsize=(8, 5))
     importance.plot(kind="barh", ax=ax)
-    ax.set_title("Feature Influence on Prediction")
+    ax.set_title("Feature Influence on Heart Disease Prediction")
 
     st.pyplot(fig)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -250,14 +265,53 @@ with tabs[2]:
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
     st.subheader("📄 Download Medical Report")
 
-    if "risk_prob" in st.session_state:
+    if "risk_prob" in st.session_state and "patient_data" in st.session_state:
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=A4)
-        c.setFont("Helvetica", 12)
+        c.setFont("Helvetica", 11)
 
-        c.drawString(50, 800, "Heart Disease Risk Assessment Report")
-        c.drawString(50, 770, f"Predicted Risk: {st.session_state['risk_prob']:.2f}%")
-        c.drawString(50, 740, "Generated using Machine Learning")
+        # Title
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(50, 820, "Heart Disease Risk Assessment Report")
+
+        c.setFont("Helvetica", 11)
+        c.drawString(50, 800, f"Generated on: {datetime.now().strftime('%d-%m-%Y %H:%M')}")
+        c.drawString(50, 785, "-" * 90)
+
+        y = 760
+        c.setFont("Helvetica-Bold", 13)
+        c.drawString(50, y, "Patient Details")
+        y -= 20
+
+        c.setFont("Helvetica", 11)
+        for k, v in st.session_state["patient_data"].items():
+            c.drawString(60, y, f"{k}: {v}")
+            y -= 16
+
+        y -= 10
+        c.setFont("Helvetica-Bold", 13)
+        c.drawString(50, y, "Prediction Result")
+        y -= 20
+
+        c.setFont("Helvetica", 11)
+        c.drawString(
+            60,
+            y,
+            f"Predicted Risk of Heart Disease: {st.session_state['risk_prob']:.2f}%"
+        )
+
+        y -= 30
+        c.setFont("Helvetica-Oblique", 9)
+        c.drawString(
+            50,
+            y,
+            "Disclaimer: This report is generated using a machine learning model and"
+        )
+        c.drawString(
+            50,
+            y - 12,
+            "is for educational purposes only. It is not a medical diagnosis."
+        )
 
         c.save()
         buffer.seek(0)
@@ -283,13 +337,10 @@ with tabs[3]:
     - End-to-end Machine Learning healthcare system  
     - Explicit feature–column traceability  
     - Probability-based prediction  
-    - Explainable AI & PDF reporting  
+    - Explainable AI & PDF medical reporting  
 
     **Developer**
-    - Name: Atharva Savant
-
-    - Gmail: atharvasavant2506@gmail.com
-    
+    - Name: Atharva  
     - GitHub: https://github.com/atharva-dev-ai  
 
     ⚠️ For educational purposes only. Not a medical diagnosis.
