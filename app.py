@@ -286,7 +286,10 @@ with tabs[3]:
     - Explainable AI & PDF reporting  
 
     **Developer**
-    - Name: Atharva  
+    - Name: Atharva Savant
+
+    - Gmail: atharvasavant2506@gmail.com
+    
     - GitHub: https://github.com/atharva-dev-ai  
 
     ⚠️ For educational purposes only. Not a medical diagnosis.
