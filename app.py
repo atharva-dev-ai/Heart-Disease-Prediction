@@ -30,21 +30,72 @@ st.set_page_config(
 # ============================================================
 # UI THEME
 # ============================================================
-st.markdown("""
-<style>
-.stApp {
-    background: radial-gradient(circle at top, #0f172a 0%, #020617 65%);
-    color: #e5e7eb;
-}
-.glass {
-    background: rgba(255,255,255,0.06);
-    backdrop-filter: blur(16px);
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.65);
-}
-</style>
-""", unsafe_allow_html=True)
+st.markdown(
+    """
+    <style>
+    /* Main background */
+    .stApp {
+        background: linear-gradient(180deg, #050816, #020617);
+        color: #f8fafc;
+    }
+
+    /* Section headers */
+    h1, h2, h3 {
+        color: #60a5fa;
+        font-weight: 700;
+    }
+
+    /* Labels */
+    label {
+        color: #e5e7eb !important;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    /* Input boxes */
+    input, select, textarea {
+        background-color: #020617 !important;
+        color: #f9fafb !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px;
+    }
+
+    /* Sliders */
+    .stSlider > div {
+        color: #f9fafb;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+        color: white;
+        font-weight: 700;
+        border-radius: 10px;
+        padding: 10px 20px;
+    }
+
+    /* Result cards */
+    .result-box {
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        font-size: 18px;
+        font-weight: 700;
+    }
+
+    .low-risk {
+        background-color: #052e16;
+        color: #22c55e;
+    }
+
+    .high-risk {
+        background-color: #450a0a;
+        color: #ef4444;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ============================================================
 # HELPER FUNCTIONS
@@ -169,7 +220,16 @@ with tabs[0]:
     with st.form("patient_form"):
         patient_name = st.text_input("Patient Name")
 
-        age = st.slider("Age (age)", 18, 90, 45)
+        age = st.number_input(
+           "Age (years)",
+            min_value=29,
+            max_value=77,
+            value=45,
+            step=1
+)
+
+)
+
         sex_label = st.selectbox("Sex (sex)", ["Female", "Male"])
         sex = 0 if sex_label == "Female" else 1
 
