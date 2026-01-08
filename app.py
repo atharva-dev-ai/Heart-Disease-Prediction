@@ -69,7 +69,7 @@ input, select {
 # --------------------------------------------------
 @st.cache_resource
 def train_pipeline():
-    df = pd.read_csv("heart.csv")
+    df = pd.read_csv("heart_disease_data.csv")
 
     X = df.drop("target", axis=1)
     y = df["target"]
