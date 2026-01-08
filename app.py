@@ -228,7 +228,7 @@ with tabs[0]:
             step=1
 )
 
-)
+
 
         sex_label = st.selectbox("Sex (sex)", ["Female", "Male"])
         sex = 0 if sex_label == "Female" else 1
