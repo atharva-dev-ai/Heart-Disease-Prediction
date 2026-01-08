@@ -48,7 +48,7 @@ label { color: #e5e7eb !important; font-weight: 600; }
 @st.cache_resource
 def train_model():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    df = pd.read_csv(os.path.join(BASE_DIR, "heart.csv"))
+    df = pd.read_csv(os.path.join(BASE_DIR, "heart_disease_data.csv"))
 
     X = df.drop("target", axis=1)
     y = df["target"]
