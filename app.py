@@ -1,381 +1,235 @@
-# ============================================================
-# Heart Disease Risk Predictor
-# Medical-grade ML Web Application
-# ============================================================
-
-# -------------------- IMPORTS --------------------
 import streamlit as st
 import pandas as pd
 import numpy as np
-import time
-import io
 from datetime import datetime
 
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 
-import matplotlib.pyplot as plt
-
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.colors import green, red, orange, black
-
-# -------------------- PAGE CONFIG --------------------
+# --------------------------------------------------
+# Page config
+# --------------------------------------------------
 st.set_page_config(
-    page_title="Heart Disease Risk Predictor",
-    page_icon="🫀",
-    layout="wide"
+    page_title="Heart Disease Risk Assessment",
+    layout="centered"
 )
 
-# ============================================================
-# UI THEME
-# ============================================================
+# --------------------------------------------------
+# Custom CSS
+# --------------------------------------------------
+st.markdown("""
+<style>
+.stApp {
+    background: linear-gradient(180deg, #050816, #020617);
+    color: #f8fafc;
+}
+h1, h2, h3 {
+    color: #60a5fa;
+    font-weight: 700;
+}
+label {
+    color: #e5e7eb !important;
+    font-weight: 600;
+}
+input, select {
+    background-color: #020617 !important;
+    color: #f9fafb !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px;
+}
+.stButton > button {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    color: white;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 20px;
+}
+.result-box {
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-size: 18px;
+    font-weight: 700;
+}
+.low-risk {
+    background-color: #052e16;
+    color: #22c55e;
+}
+.high-risk {
+    background-color: #450a0a;
+    color: #ef4444;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# LOAD & TRAIN MODEL (CACHED)
+# --------------------------------------------------
+@st.cache_resource
+def train_pipeline():
+    df = pd.read_csv("heart.csv")
+
+    X = df.drop("target", axis=1)
+    y = df["target"]
+
+    pipeline = Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", LogisticRegression(max_iter=1000))
+    ])
+
+    pipeline.fit(X, y)
+    return pipeline
+
+pipeline = train_pipeline()
+
+# --------------------------------------------------
+# Title
+# --------------------------------------------------
+st.title("❤️ Heart Disease Risk Assessment")
 st.markdown(
-    """
-    <style>
-    /* Main background */
-    .stApp {
-        background: linear-gradient(180deg, #050816, #020617);
-        color: #f8fafc;
-    }
-
-    /* Section headers */
-    h1, h2, h3 {
-        color: #60a5fa;
-        font-weight: 700;
-    }
-
-    /* Labels */
-    label {
-        color: #e5e7eb !important;
-        font-size: 15px;
-        font-weight: 600;
-    }
-
-    /* Input boxes */
-    input, select, textarea {
-        background-color: #020617 !important;
-        color: #f9fafb !important;
-        border: 1px solid #334155 !important;
-        border-radius: 8px;
-    }
-
-    /* Sliders */
-    .stSlider > div {
-        color: #f9fafb;
-    }
-
-    /* Buttons */
-    .stButton > button {
-        background: linear-gradient(90deg, #ef4444, #dc2626);
-        color: white;
-        font-weight: 700;
-        border-radius: 10px;
-        padding: 10px 20px;
-    }
-
-    /* Result cards */
-    .result-box {
-        padding: 20px;
-        border-radius: 12px;
-        margin-top: 20px;
-        font-size: 18px;
-        font-weight: 700;
-    }
-
-    .low-risk {
-        background-color: #052e16;
-        color: #22c55e;
-    }
-
-    .high-risk {
-        background-color: #450a0a;
-        color: #ef4444;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
+    "A **preliminary screening tool** using Machine Learning. "
+    "**Not a medical diagnosis.**"
 )
 
-# ============================================================
-# HELPER FUNCTIONS
-# ============================================================
-def interpret_risk(risk):
-    if risk <= 10:
-        return "Very Low Risk (Normal)", green
-    elif risk <= 25:
-        return "Low Risk", green
-    elif risk <= 50:
-        return "Moderate Risk", orange
-    elif risk <= 75:
-        return "High Risk", red
-    else:
-        return "Very High Risk (Critical)", red
+# --------------------------------------------------
+# Mode Selection
+# --------------------------------------------------
+mode = st.radio(
+    "Select Mode",
+    ["👤 General User", "🩺 Doctor / Clinical Mode"]
+)
 
+# ==================================================
+# USER MODE (MINIMISED FEATURES)
+# ==================================================
+if mode == "👤 General User":
 
-def doctor_recommendation(risk):
-    if risk <= 10:
-        return "Maintain a healthy lifestyle. Routine annual checkups recommended."
-    elif risk <= 25:
-        return "Preventive monitoring and a balanced diet are advised."
-    elif risk <= 50:
-        return "Lifestyle modification and periodic cardiology review recommended."
-    elif risk <= 75:
-        return "Medical consultation with a cardiologist is strongly advised."
-    else:
-        return "Immediate cardiologist consultation required. High clinical risk."
+    st.subheader("🧾 Basic Information")
 
+    age = st.number_input("Age (years)", min_value=29, max_value=77, value=45)
+    sex = st.selectbox("Gender", ["Male", "Female"])
+    sex_val = 1 if sex == "Male" else 0
 
-def generate_pdf(report):
-    buffer = io.BytesIO()
-    c = canvas.Canvas(buffer, pagesize=A4)
-    width, height = A4
+    st.subheader("🩺 Health Information")
 
-    c.setFont("Helvetica-Bold", 16)
-    c.drawCentredString(width / 2, height - 50,
-                         "Heart Disease Risk Assessment Report")
-
-    c.setFont("Helvetica", 10)
-    c.drawCentredString(
-        width / 2, height - 70,
-        f"Generated on: {report['timestamp'].strftime('%d %B %Y, %H:%M')}"
+    bp_choice = st.selectbox(
+        "Blood Pressure",
+        ["Normal (~120)", "Elevated (~130)", "High (140+)", "I don't know"]
     )
+    trestbps = {
+        "Normal (~120)": 120,
+        "Elevated (~130)": 130,
+        "High (140+)": 145,
+        "I don't know": 130
+    }[bp_choice]
 
-    y = height - 120
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, "Patient Clinical Parameters")
-    y -= 20
-
-    c.setFont("Helvetica", 10)
-    for k, v in report["patient_data"].items():
-        c.rect(45, y - 5, 500, 20)
-        c.drawString(60, y, str(k))
-        c.drawString(350, y, str(v))
-        y -= 20
-        if y < 120:
-            c.showPage()
-            y = height - 120
-            c.setFont("Helvetica", 10)
-
-    risk_text, color = interpret_risk(report["risk"])
-
-    y -= 10
-    c.setFillColor(color)
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(50, y, f"Risk Level: {risk_text}")
-    c.setFillColor(black)
-
-    y -= 20
-    c.setFont("Helvetica", 11)
-    c.drawString(50, y, f"Predicted Risk: {report['risk']}%")
-    y -= 15
-    c.drawString(50, y, f"Doctor Recommendation: {doctor_recommendation(report['risk'])}")
-
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(
-        width / 2, 40,
-        "Developed by Atharva Savant | atharvasavant2506@gmail.com"
+    chol_choice = st.selectbox(
+        "Cholesterol Level",
+        ["Normal (<200)", "Borderline (200–239)", "High (240+)", "I don't know"]
     )
+    chol = {
+        "Normal (<200)": 180,
+        "Borderline (200–239)": 220,
+        "High (240+)": 260,
+        "I don't know": 220
+    }[chol_choice]
 
-    c.save()
-    buffer.seek(0)
-    return buffer
+    stamina_choice = st.selectbox(
+        "Physical Stamina",
+        ["Low", "Moderate", "High", "I don't know"]
+    )
+    thalach = {
+        "Low": 120,
+        "Moderate": 150,
+        "High": 175,
+        "I don't know": 150
+    }[stamina_choice]
 
-# ============================================================
-# HEADER
-# ============================================================
-st.markdown(
-    "<h1 style='text-align:center;color:#60a5fa;'>🫀 Heart Disease Risk Predictor</h1>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<p style='text-align:center;'>ML-based clinical decision support system</p>",
-    unsafe_allow_html=True
-)
+    # Defaults for hidden clinical features
+    cp = 0
+    fbs = 0
+    restecg = 1
+    exang = 0
+    oldpeak = 1.0
+    slope = 1
+    ca = 0
+    thal = 2
 
-# ============================================================
-# LOAD DATA & MODEL
-# ============================================================
-data = pd.read_csv("heart_disease_data.csv")
-X = data.drop("target", axis=1)
-y = data["target"]
+    if st.button("Generate Report"):
 
-scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+        input_data = np.array([[
+            age, sex_val, cp, trestbps, chol,
+            fbs, restecg, thalach, exang,
+            oldpeak, slope, ca, thal
+        ]])
 
-model = LogisticRegression()
-model.fit(X_scaled, y)
+        prediction = pipeline.predict(input_data)[0]
+        report_time = datetime.now().strftime("%d %b %Y • %I:%M %p")
 
-# ============================================================
-# NAVIGATION
-# ============================================================
-tabs = st.tabs(["🩺 Risk Assessment", "📄 Reports", "📊 Model Insights", "ℹ️ About"])
+        st.subheader("📄 Risk Assessment Report")
+        st.markdown(f"🕒 **Report Generated On:** `{report_time}`")
 
-# ============================================================
-# TAB 1: RISK ASSESSMENT
-# ============================================================
-with tabs[0]:
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+        if prediction == 1:
+            st.markdown(
+                "<div class='result-box high-risk'>⚠️ High Risk of Heart Disease</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                "<div class='result-box low-risk'>✅ Low Risk of Heart Disease</div>",
+                unsafe_allow_html=True
+            )
 
-    with st.form("patient_form"):
-        patient_name = st.text_input("Patient Name")
-
-        age = st.number_input(
-           "Age (years)",
-            min_value=29,
-            max_value=77,
-            value=45,
-            step=1
-)
-
-
-
-        sex_label = st.selectbox("Sex (sex)", ["Female", "Male"])
-        sex = 0 if sex_label == "Female" else 1
-
-        cp_label = st.selectbox(
-            "Chest Pain Type (cp)",
-            ["0 = Typical Angina", "1 = Atypical Angina", "2 = Non-anginal Pain", "3 = Asymptomatic"]
+        st.markdown(
+            "_Based on limited self-reported inputs. "
+            "For screening purposes only._"
         )
-        cp = int(cp_label[0])
 
-        trestbps = st.slider("Resting Blood Pressure (trestbps)", 80, 200, 120)
-        chol = st.slider("Serum Cholesterol (chol)", 100, 400, 200)
+# ==================================================
+# DOCTOR MODE (FULL FEATURES)
+# ==================================================
+else:
 
-        fbs_label = st.selectbox("Fasting Blood Sugar >120 mg/dL (fbs)", ["No", "Yes"])
-        fbs = 1 if fbs_label == "Yes" else 0
+    st.subheader("🩺 Clinical Input (Doctor Mode)")
+    st.markdown("For trained healthcare professionals only.")
 
-        restecg_label = st.selectbox(
-            "Resting ECG Result (restecg)",
-            ["0 = Normal", "1 = ST-T Abnormality", "2 = LV Hypertrophy"]
-        )
-        restecg = int(restecg_label[0])
+    age = st.number_input("Age", 29, 77, 50)
+    sex = st.selectbox("Sex (0 = Female, 1 = Male)", [0, 1])
+    cp = st.selectbox("Chest Pain Type (cp)", [0, 1, 2, 3])
+    trestbps = st.number_input("Resting Blood Pressure", 80, 200, 120)
+    chol = st.number_input("Serum Cholesterol", 100, 400, 200)
+    fbs = st.selectbox("Fasting Blood Sugar > 120", [0, 1])
+    restecg = st.selectbox("Resting ECG", [0, 1, 2])
+    thalach = st.number_input("Max Heart Rate", 60, 220, 150)
+    exang = st.selectbox("Exercise Induced Angina", [0, 1])
+    oldpeak = st.number_input("ST Depression", 0.0, 6.0, 1.0)
+    slope = st.selectbox("Slope", [0, 1, 2])
+    ca = st.selectbox("Major Vessels (ca)", [0, 1, 2, 3])
+    thal = st.selectbox("Thalassemia (thal)", [1, 2, 3])
 
-        thalach = st.slider("Maximum Heart Rate Achieved (thalach)", 70, 210, 150)
+    if st.button("Generate Clinical Report"):
 
-        exang_label = st.selectbox("Exercise Induced Angina (exang)", ["No", "Yes"])
-        exang = 1 if exang_label == "Yes" else 0
-
-        oldpeak = st.slider("ST Depression (oldpeak)", 0.0, 6.0, 1.0)
-
-        slope_label = st.selectbox(
-            "Slope of Peak Exercise ST Segment (slope)",
-            ["0 = Upsloping", "1 = Flat", "2 = Downsloping"]
-        )
-        slope = int(slope_label[0])
-
-        ca = st.selectbox("Number of Major Vessels (ca)", [0, 1, 2, 3, 4])
-
-        thal_label = st.selectbox(
-            "Thalassemia (thal)",
-            ["0 = Normal", "1 = Fixed Defect", "2 = Reversible Defect", "3 = Unknown"]
-        )
-        thal = int(thal_label[0])
-
-        submitted = st.form_submit_button("🩺 Assess Heart Disease Risk")
-
-    if submitted:
-        input_data = np.array([
+        input_data = np.array([[
             age, sex, cp, trestbps, chol,
             fbs, restecg, thalach, exang,
             oldpeak, slope, ca, thal
-        ]).reshape(1, -1)
+        ]])
 
-        risk_prob = model.predict_proba(scaler.transform(input_data))[0][1] * 100
-        risk_text, _ = interpret_risk(risk_prob)
+        prediction = pipeline.predict(input_data)[0]
+        report_time = datetime.now().strftime("%d %b %Y • %I:%M %p")
 
-        st.session_state.setdefault("report_history", [])
-        st.session_state["report_history"].append({
-            "patient_name": patient_name or "Not Provided",
-            "timestamp": datetime.now(),
-            "risk": round(risk_prob, 2),
-            "risk_text": risk_text,
-            "patient_data": {
-                "Patient Name": patient_name or "Not Provided",
-                "Age (age)": age,
-                "Sex (sex)": sex_label,
-                "Chest Pain (cp)": cp_label,
-                "Resting BP (trestbps)": trestbps,
-                "Cholesterol (chol)": chol,
-                "Fasting Blood Sugar (fbs)": fbs_label,
-                "Resting ECG (restecg)": restecg_label,
-                "Max Heart Rate (thalach)": thalach,
-                "Exercise Angina (exang)": exang_label,
-                "ST Depression (oldpeak)": oldpeak,
-                "Slope (slope)": slope_label,
-                "Major Vessels (ca)": ca,
-                "Thalassemia (thal)": thal_label
-            }
-        })
+        st.subheader("📄 Clinical Report")
+        st.markdown(f"🕒 **Report Generated On:** `{report_time}`")
 
-        st.metric("Predicted Risk (%)", f"{risk_prob:.2f}%")
-        st.info(f"Clinical Interpretation: **{risk_text}**")
-        st.warning(doctor_recommendation(risk_prob))
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ============================================================
-# TAB 2: REPORTS (LAST 10 + INDIVIDUAL DOWNLOAD)
-# ============================================================
-with tabs[1]:
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    st.subheader("🗂️ Recent Reports (Last 10)")
-
-    if "report_history" in st.session_state and len(st.session_state["report_history"]) > 0:
-        recent_reports = st.session_state["report_history"][-10:][::-1]
-
-        for idx, report in enumerate(recent_reports):
-            with st.expander(
-                f"🧑 {report['patient_name']} | "
-                f"{report['timestamp'].strftime('%d-%m-%Y %H:%M')} | "
-                f"{report['risk']}% | {report['risk_text']}"
-            ):
-                pdf_buffer = generate_pdf(report)
-                st.download_button(
-                    "⬇️ Download This Report (PDF)",
-                    pdf_buffer,
-                    file_name=f"{report['patient_name'].replace(' ', '_')}_heart_report.pdf",
-                    mime="application/pdf",
-                    key=f"dl_{idx}"
-                )
-    else:
-        st.info("No reports generated in this session yet.")
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ============================================================
-# TAB 3: MODEL INSIGHTS
-# ============================================================
-with tabs[2]:
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    st.subheader("📊 Feature Importance")
-
-    importance = pd.Series(model.coef_[0], index=X.columns).sort_values()
-    fig, ax = plt.subplots(figsize=(8, 5))
-    importance.plot(kind="barh", ax=ax)
-    st.pyplot(fig)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# ============================================================
-# TAB 4: ABOUT
-# ============================================================
-with tabs[3]:
-    st.markdown("<div class='glass'>", unsafe_allow_html=True)
-    st.write("""
-    **Project Highlights**
-    - End-to-end Machine Learning healthcare system  
-    - Explicit feature–column traceability  
-    - Probability-based prediction  
-    - Explainable AI & PDF medical reporting  
-
-    **Developer**
-    - Name: Atharva Savant
-   
-    - Email: atharvasavant2506@gmail.com
-   
-    - GitHub: https://github.com/atharva-dev-ai  
-
-    ⚠️ For educational purposes only. Not a medical diagnosis.
-    """)
-    st.markdown("</div>", unsafe_allow_html=True)
+        if prediction == 1:
+            st.markdown(
+                "<div class='result-box high-risk'>⚠️ High Risk Detected</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                "<div class='result-box low-risk'>✅ Low Risk Detected</div>",
+                unsafe_allow_html=True
+            )
