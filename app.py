@@ -4,15 +4,15 @@ import pickle
 from datetime import datetime
 
 # --------------------------------------------------
-# Page Config
+# Page config
 # --------------------------------------------------
 st.set_page_config(
-    page_title="Heart Disease Prediction System",
-    layout="centered"
+    page_title="Heart Disease Risk Predictor",
+    layout="wide"
 )
 
 # --------------------------------------------------
-# Load Model & Scaler
+# Load model & scaler
 # --------------------------------------------------
 @st.cache_resource
 def load_artifacts():
@@ -23,127 +23,125 @@ def load_artifacts():
 model, scaler = load_artifacts()
 
 # --------------------------------------------------
-# Sidebar Navigation
-# --------------------------------------------------
-st.sidebar.title("Navigation")
-page = st.sidebar.radio(
-    "Go to",
-    ["About", "Prediction", "Reports"]
-)
-
-# --------------------------------------------------
-# Session State for Reports
+# Session state for reports
 # --------------------------------------------------
 if "report" not in st.session_state:
     st.session_state.report = None
 
+# --------------------------------------------------
+# Custom CSS (glass + dark medical UI)
+# --------------------------------------------------
+st.markdown("""
+<style>
+.stApp {
+    background: radial-gradient(circle at top, #0f172a, #020617);
+    color: #e5e7eb;
+}
+
+h1 {
+    color: #60a5fa;
+    font-weight: 800;
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-size: 15px;
+    color: #9ca3af;
+}
+
+.stTabs [aria-selected="true"] {
+    color: #ef4444;
+    border-bottom: 2px solid #ef4444;
+}
+
+label {
+    font-weight: 600;
+    color: #e5e7eb !important;
+}
+
+.stButton > button {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    color: white;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 10px 25px;
+}
+
+.glass {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 25px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.result-high {
+    background-color: #450a0a;
+    padding: 18px;
+    border-radius: 12px;
+    color: #fecaca;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.result-low {
+    background-color: #052e16;
+    padding: 18px;
+    border-radius: 12px;
+    color: #bbf7d0;
+    font-size: 18px;
+    font-weight: 700;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# Header
+# --------------------------------------------------
+st.markdown(
+    "<h1>❤️ Heart Disease Risk Predictor</h1>"
+    "<p>ML-based clinical decision support system</p>",
+    unsafe_allow_html=True
+)
+
+# --------------------------------------------------
+# Tabs
+# --------------------------------------------------
+tabs = st.tabs(
+    ["🩺 Risk Assessment", "📄 Reports", "📊 Model Insights", "ℹ️ About"]
+)
+
 # ==================================================
-# ABOUT PAGE
+# TAB 0: RISK ASSESSMENT
 # ==================================================
-if page == "About":
+with tabs[0]:
 
-    st.title("❤️ Heart Disease Prediction System")
+    st.markdown("<div class='glass'>", unsafe_allow_html=True)
 
-    st.markdown("""
-    ### 📘 About the Project
+    patient_name = st.text_input("Patient Name")
 
-    This application uses **Machine Learning** to provide a
-    **preliminary heart disease risk screening**.
-
-    #### 🔹 Highlights
-    - Simple user-friendly mode
-    - Doctor mode with clinical parameters
-    - Logistic Regression–based model
-    - Risk probability estimation
-    - Timestamped medical-style reports
-
-    ⚠️ **Disclaimer:**  
-    This tool is for **educational and screening purposes only**  
-    and **is not a medical diagnosis system**.
-    """)
-
-# ==================================================
-# PREDICTION PAGE
-# ==================================================
-elif page == "Prediction":
-
-    st.title("🔍 Heart Disease Risk Prediction")
-
-    mode = st.radio(
-        "Select Mode",
-        ["👤 General User", "🩺 Doctor Mode"]
-    )
-
-    st.subheader("🧾 Basic Information")
-
-    age = st.number_input("Age (years)", 29, 77, 45)
-    sex = st.selectbox("Gender", ["Male", "Female"])
+    age = st.slider("Age (age)", 29, 77, 45)
+    sex = st.selectbox("Sex (sex)", ["Female", "Male"])
     sex_val = 1 if sex == "Male" else 0
 
-    # --------------------------------------------------
-    # USER MODE (MINIMISED INPUTS)
-    # --------------------------------------------------
-    if mode == "👤 General User":
+    cp = st.selectbox(
+        "Chest Pain Type (cp)",
+        ["0 = Typical Angina", "1 = Atypical Angina", "2 = Non-anginal Pain", "3 = Asymptomatic"]
+    )
+    cp = int(cp.split("=")[0])
 
-        trestbps = st.selectbox(
-            "Blood Pressure",
-            [120, 130, 145],
-            format_func=lambda x:
-            "Normal (~120)" if x == 120 else
-            "Elevated (~130)" if x == 130 else
-            "High (140+)"
-        )
+    trestbps = st.slider("Resting Blood Pressure (trestbps)", 80, 200, 120)
+    chol = st.slider("Serum Cholesterol (chol)", 100, 400, 200)
+    fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl (fbs)", [0, 1])
+    restecg = st.selectbox("Resting ECG Results (restecg)", [0, 1, 2])
+    thalach = st.slider("Max Heart Rate Achieved (thalach)", 60, 220, 150)
+    exang = st.selectbox("Exercise Induced Angina (exang)", [0, 1])
+    oldpeak = st.slider("ST Depression (oldpeak)", 0.0, 6.0, 1.0)
+    slope = st.selectbox("Slope of ST Segment (slope)", [0, 1, 2])
+    ca = st.selectbox("Major Vessels Colored (ca)", [0, 1, 2, 3])
+    thal = st.selectbox("Thalassemia (thal)", [1, 2, 3])
 
-        chol = st.selectbox(
-            "Cholesterol Level",
-            [180, 220, 260],
-            format_func=lambda x:
-            "Normal (<200)" if x == 180 else
-            "Borderline (200–239)" if x == 220 else
-            "High (240+)"
-        )
-
-        thalach = st.selectbox(
-            "Physical Stamina",
-            [120, 150, 175],
-            format_func=lambda x:
-            "Low" if x == 120 else
-            "Moderate" if x == 150 else
-            "High"
-        )
-
-        # Hidden clinical defaults
-        cp = 0
-        fbs = 0
-        restecg = 1
-        exang = 0
-        oldpeak = 1.0
-        slope = 1
-        ca = 0
-        thal = 2
-
-    # --------------------------------------------------
-    # DOCTOR MODE (FULL INPUTS)
-    # --------------------------------------------------
-    else:
-        st.subheader("🩺 Clinical Parameters")
-
-        cp = st.selectbox("Chest Pain Type (cp)", [0, 1, 2, 3])
-        trestbps = st.number_input("Resting Blood Pressure", 80, 200, 120)
-        chol = st.number_input("Serum Cholesterol", 100, 400, 200)
-        fbs = st.selectbox("Fasting Blood Sugar > 120", [0, 1])
-        restecg = st.selectbox("Resting ECG", [0, 1, 2])
-        thalach = st.number_input("Max Heart Rate Achieved", 60, 220, 150)
-        exang = st.selectbox("Exercise Induced Angina", [0, 1])
-        oldpeak = st.number_input("ST Depression (oldpeak)", 0.0, 6.0, 1.0)
-        slope = st.selectbox("Slope", [0, 1, 2])
-        ca = st.selectbox("Major Vessels (ca)", [0, 1, 2, 3])
-        thal = st.selectbox("Thalassemia (thal)", [1, 2, 3])
-
-    # --------------------------------------------------
-    # Generate Report
-    # --------------------------------------------------
-    if st.button("Generate Report"):
+    if st.button("Assess Risk"):
 
         input_data = np.array([[
             age, sex_val, cp, trestbps, chol,
@@ -157,37 +155,102 @@ elif page == "Prediction":
         probability = model.predict_proba(scaled_input)[0][1] * 100
 
         st.session_state.report = {
+            "name": patient_name,
+            "age": age,
+            "sex": sex,
             "prediction": prediction,
             "probability": probability,
-            "time": datetime.now().strftime("%d %b %Y • %I:%M %p"),
-            "accuracy": 0.88  # replace with real accuracy if known
+            "time": datetime.now().strftime("%d %b %Y • %I:%M %p")
         }
 
-        st.success("Report generated successfully. Go to Reports section.")
+        if prediction == 1:
+            st.markdown(
+                f"<div class='result-high'>⚠️ High Risk of Heart Disease ({probability:.2f}%)</div>",
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                f"<div class='result-low'>✅ Low Risk of Heart Disease ({probability:.2f}%)</div>",
+                unsafe_allow_html=True
+            )
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================================================
-# REPORTS PAGE
+# TAB 1: REPORTS
 # ==================================================
-elif page == "Reports":
+with tabs[1]:
 
-    st.title("📄 Reports")
+    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+    st.subheader("📄 Risk Assessment Report")
 
     if st.session_state.report is None:
-        st.warning("No report generated yet.")
+        st.info("No report generated yet.")
     else:
         r = st.session_state.report
 
         st.markdown(f"""
-        **🕒 Generated On:** {r['time']}  
+        **Patient Name:** {r["name"] or "N/A"}  
+        **Age:** {r["age"]}  
+        **Sex:** {r["sex"]}  
+        **Generated On:** {r["time"]}  
 
-        **🩺 Prediction:** {"High Risk" if r['prediction'] == 1 else "Low Risk"}  
-
-        **📊 Risk Probability:** {r['probability']:.2f}%  
-
-        **📈 Model Accuracy:** {r['accuracy'] * 100:.2f}%  
+        **Prediction:** {"High Risk" if r["prediction"] == 1 else "Low Risk"}  
+        **Risk Probability:** {r["probability"]:.2f}%
         """)
 
-        st.markdown("""
-        ⚠️ This report is generated by a machine learning model and
-        should not be considered a medical diagnosis.
-        """)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ==================================================
+# TAB 2: MODEL INSIGHTS
+# ==================================================
+with tabs[2]:
+
+    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+    st.subheader("📊 Model Insights")
+
+    st.write("""
+    - **Algorithm:** Logistic Regression  
+    - **Preprocessing:** StandardScaler  
+    - **Prediction Type:** Binary Classification  
+    - **Output:** Probability-based risk score  
+    - **Dataset:** UCI Heart Disease Dataset
+    """)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# ==================================================
+# TAB 3: ABOUT (YOUR EXACT CODE)
+# ==================================================
+with tabs[3]:
+    st.markdown("<div class='glass'>", unsafe_allow_html=True)
+
+    st.subheader("ℹ️ About This Project")
+
+    st.write("""
+    **Project Highlights**
+    - End-to-end Machine Learning healthcare system  
+    - Probability-based heart disease risk prediction  
+    - Explainable AI with feature importance visualization  
+    - Automated PDF medical report generation  
+    - Premium medical-grade UI/UX using Streamlit  
+
+    ⚠️ *This application is for educational purposes only and should not be used as a medical diagnosis.*
+    """)
+
+    st.markdown("---")
+
+    st.subheader("👨‍💻 Developer Information")
+
+    st.write("""
+    **Name:** Atharva Savant  
+    **Email:** atharvasavant2506@gmail.com  
+    **GitHub:** https://github.com/atharva-dev-ai  
+
+    Passionate about Machine Learning, Data Science, and building
+    real-world, production-ready AI applications.
+    """)
+
+    st.markdown("</div>", unsafe_allow_html=True)
