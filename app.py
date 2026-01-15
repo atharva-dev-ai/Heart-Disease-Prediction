@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pickle
+import os
 from datetime import datetime
 
 # --------------------------------------------------
@@ -12,15 +13,28 @@ st.set_page_config(
 )
 
 # --------------------------------------------------
-# Load model & scaler
+# SAFE Load model & scaler (NO CRASH)
 # --------------------------------------------------
 @st.cache_resource
-def load_artifacts():
-    model = pickle.load(open("model.pkl", "rb"))
-    scaler = pickle.load(open("scaler.pkl", "rb"))
-    return model, scaler
+def load_artifacts_safe():
+    if not os.path.exists("model.pkl") or not os.path.exists("scaler.pkl"):
+        return None, None
+    try:
+        model = pickle.load(open("model.pkl", "rb"))
+        scaler = pickle.load(open("scaler.pkl", "rb"))
+        return model, scaler
+    except Exception:
+        return None, None
 
-model, scaler = load_artifacts()
+model, scaler = load_artifacts_safe()
+
+# --------------------------------------------------
+# HARD STOP if model not available
+# --------------------------------------------------
+if model is None or scaler is None:
+    st.error("⚠️ Model files not found or failed to load.")
+    st.info("The prediction system is temporarily unavailable. Please contact the developer.")
+    st.stop()
 
 # --------------------------------------------------
 # Session state for reports
@@ -222,9 +236,10 @@ with tabs[2]:
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================================================
-# TAB 3: ABOUT (YOUR EXACT CODE)
+# TAB 3: ABOUT
 # ==================================================
 with tabs[3]:
+
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
 
     st.subheader("ℹ️ About This Project")
