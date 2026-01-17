@@ -242,6 +242,25 @@ with tabs[0]:
     # Glass container for styling
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
 
+  # --------------------------------------------------
+    # Help section: How users can get medical values
+    # --------------------------------------------------
+    with st.expander("ℹ️ How do I get these medical values?"):
+        st.markdown("""
+        **trestbps (Resting Blood Pressure)**  
+        • Measured using a **BP machine** at home or clinic  
+
+        **chol (Serum Cholesterol)**  
+        • Obtained from a **blood test (lipid profile)**  
+
+        **thalach (Maximum Heart Rate Achieved)**  
+        • Measured during a **stress test / treadmill test**  
+
+        **fbs (Fasting Blood Sugar)**  
+        • Blood sugar test after **8–12 hours fasting**
+        """)
+
+
     # Form groups all patient inputs together
     with st.form("patient_form"):
 
