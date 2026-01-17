@@ -242,11 +242,13 @@ with tabs[0]:
     # Glass container for styling
     st.markdown("<div class='glass'>", unsafe_allow_html=True)
 
-  # --------------------------------------------------
+     # --------------------------------------------------
     # Help section: How users can get medical values
     # --------------------------------------------------
     with st.expander("ℹ️ How do I get these medical values?"):
         st.markdown("""
+        ### 🩺 Basic Measurements
+
         **trestbps (Resting Blood Pressure)**  
         • Measured using a **BP machine** at home or clinic  
 
@@ -254,10 +256,38 @@ with tabs[0]:
         • Obtained from a **blood test (lipid profile)**  
 
         **thalach (Maximum Heart Rate Achieved)**  
-        • Measured during a **stress test / treadmill test**  
+        • Measured during a **stress test / treadmill test**
 
         **fbs (Fasting Blood Sugar)**  
-        • Blood sugar test after **8–12 hours fasting**
+        • Blood sugar test after **8–12 hours of fasting**
+
+        ---
+
+        ### ❤️ Heart-related Clinical Tests
+
+        **cp (Chest Pain Type)**  
+        • Determined by a **doctor based on symptoms**  
+        • Includes angina type, pain during exertion, or no pain  
+
+        **restecg (Resting ECG Result)**  
+        • Obtained from an **ECG (Electrocardiogram) test**  
+
+        **exang (Exercise Induced Angina)**  
+        • Identified during a **stress test or physical activity**  
+        • Indicates chest pain during exercise  
+
+        **oldpeak (ST Depression)**  
+        • Measured from an **ECG during stress testing**  
+        • Indicates stress on the heart  
+
+        **slope (Slope of ST Segment)**  
+        • Derived from **ECG graph patterns** during exercise  
+
+        **ca (Number of Major Vessels)**  
+        • Determined using **angiography (imaging test)**  
+
+        **thal (Thalassemia / Blood Disorder Indicator)**  
+        • Determined via **blood tests or nuclear imaging**
         """)
 
 
